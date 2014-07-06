@@ -5,6 +5,7 @@ Magic wand tool (fuzzy selection) by color for Javascript
 
 Live example: http://jsfiddle.net/Tamersoul/dr7Dw/
 
+
 Magic Wand Control for Openlayers 2.13
 
 Use only for 'google' and 'grid' layers with CORS support
