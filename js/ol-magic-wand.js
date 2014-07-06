@@ -1181,6 +1181,7 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
         this.map.events.on({
             'moveend': this.onMapMoveEnd,
             'updatesize': this.onMapUpdateSize,
+            'changebaselayer': this.onChangeBaseLayer,
             scope: this
         });
         this.onMapMoveEnd();
@@ -1196,11 +1197,17 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
         this.map.events.un({
             'moveend': this.onMapMoveEnd,
             'updatesize': this.onMapUpdateSize,
+            'changebaselayer': this.onChangeBaseLayer,
             scope: this
         });
 
         this.isMapConnect = false;
         return true;
+    },
+
+    // private
+    onChangeBaseLayer: function () {
+        this.createSnapshot();
     },
 
     // private
