@@ -24,6 +24,23 @@
 // THE SOFTWARE.
 
 /**
+ * Additional function getLonLatFromWorldViewPortPx
+ * Get LonLat by pixel without wrapDateLine
+ */
+OpenLayers.Layer.prototype.getLonLatFromWorldViewPortPx = function (viewPortPx) {
+	var lonlat = null;
+	var map = this.map;
+	if (viewPortPx != null && map.minPx) {
+		var res = map.getResolution();
+		var maxExtent = map.getMaxExtent({ restricted: true });
+		var lon = (viewPortPx.x - map.minPx.x) * res + maxExtent.left;
+		var lat = (map.minPx.y - viewPortPx.y) * res + maxExtent.top;
+		lonlat = new OpenLayers.LonLat(lon, lat);
+	}
+	return lonlat;
+};
+
+/**
  * Class: OpenLayers.Tile.Mask
  * Tile for displaying binary mask
  *
