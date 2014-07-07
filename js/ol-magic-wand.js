@@ -203,19 +203,20 @@ OpenLayers.Tile.Mask = OpenLayers.Class(OpenLayers.Tile, {
                 b = this.image.bounds,
                 of = this.image.globalOffset, // image offset in the viewport basis,
                 data = new Uint8Array(sw * sh), // viewport data (+1 px on each side) for correct detection border
-                minPx = this.layer.map.minPx,
-                maxPx = this.layer.map.maxPx,
-                pxLen = Math.floor(maxPx.x - minPx.x), // width in pixels of the one world
+                minPx = Math.round(this.layer.map.minPx.x),
+                minPy = Math.round(this.layer.map.minPx.y),
+                maxPx = Math.round(this.layer.map.maxPx.x),
+                pxLen = maxPx - minPx, // width in pixels of the one world
                 offset,
                 offsets = [{ // all posible world offsets in the viewport basis (considering wrapDateLine)
-                    x: Math.floor(-minPx.x),
-                    y: Math.floor(-minPx.y)
+                    x: -minPx,
+                    y: -minPy
                 }, { // add left world
-                    x: Math.floor(-(minPx.x - pxLen)),
-                    y: Math.floor(-minPx.y)
+                    x: -(minPx - pxLen),
+                    y: -minPy
                 }, { // add right world
-                    x: Math.floor(-(minPx.x + pxLen)),
-                    y: Math.floor(-minPx.y)
+                    x: -(minPx + pxLen),
+                    y: -minPy
                 }];
             
             // walk through all worlds
@@ -306,8 +307,8 @@ OpenLayers.Tile.Mask = OpenLayers.Class(OpenLayers.Tile, {
         if (!noBorder) { // need create border
             // copy visible image data (+1 px on each side) for border search
             var offset = { // viewport offset in the global basis
-                    x: Math.floor(-this.layer.map.minPx.x),
-                    y: Math.floor(-this.layer.map.minPx.y)
+                    x: Math.round(-this.layer.map.minPx.x),
+                    y: Math.round(-this.layer.map.minPx.y)
                 },
                 img = this.image.data,
                 w1 = this.image.width,
@@ -415,8 +416,8 @@ OpenLayers.Tile.Mask = OpenLayers.Class(OpenLayers.Tile, {
 
         var i, j, points, len, plen,
             image = this.image,
-            dx = image.globalOffset.x + Math.floor(this.layer.map.minPx.x),
-            dy = image.globalOffset.y + Math.floor(this.layer.map.minPx.y),
+            dx = image.globalOffset.x + Math.round(this.layer.map.minPx.x),
+            dy = image.globalOffset.y + Math.round(this.layer.map.minPx.y),
             contours = MagicWand.traceContours(image),
             result = [];
 
@@ -1285,24 +1286,28 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
         if (evt.keyCode == 17) this.map.div.classList.remove(this.addClass);
         if (evt.keyCode == 67) { // show contours (debug mode)
             var cs = this.maskLayer.tile.getContours();
-            
+
             var ctx = this.maskLayer.tile.canvasContext;
             ctx.clearRect(0, 0, this.maskLayer.tile.size.w, this.maskLayer.tile.size.h);
+
+            var i, j, ps;
+            // lines
             ctx.beginPath();
-            for (var i = 0; i < cs.length; i++) {
-                var ps = cs[i].points;
+            for (i = 0; i < cs.length; i++) {
+                ps = cs[i].points;
                 ctx.moveTo(ps[0].x, ps[0].y);
-                for (var j = 1; j < ps.length; j++) {
+                for (j = 1; j < ps.length; j++) {
                     ctx.lineTo(ps[j].x, ps[j].y);
                 }
             }
             ctx.strokeStyle = "red";
             ctx.stroke();
-            
-            ctx.fillStyle = "#00FF00";;
-            for (var i = 0; i < cs.length; i++) {
-                var ps = cs[i].points;
-                for (var j = 0; j < ps.length; j++) {
+
+            // vertices
+            ctx.fillStyle = "aqua";
+            for (i = 0; i < cs.length; i++) {
+                ps = cs[i].points;
+                for (j = 0; j < ps.length; j++) {
                     ctx.fillRect(ps[j].x, ps[j].y, 1, 1);
                 }
             }
@@ -1340,9 +1345,9 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
                 var ady = Math.abs(dy);
                 var sign = adx > ady ? dx / adx : dy / ady;
                 sign = sign < 0 ? sign / 5 : sign / 3;
-                var thres = Math.min(Math.max(this.colorThreshold + Math.floor(sign * len), 1), 255); // 1st method
+                var thres = Math.min(Math.max(this.colorThreshold + Math.round(sign * len), 1), 255); // 1st method
                 //var thres = Math.min(Math.max(this.colorThreshold + dx / 2, 1), 255); // 2nd method
-                //var thres = Math.min(this.colorThreshold + Math.floor(len / 3), 255); // 3rd method
+                //var thres = Math.min(this.colorThreshold + Math.round(len / 3), 255); // 3rd method
                 if (thres != this.currentThreshold) {
                     this.currentThreshold = thres;
                     this.drawMask(px, py);
@@ -1494,7 +1499,7 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
         }
 
         var tile = this.maskLayer.tile;
-        var offset = { x: Math.floor(-this.map.minPx.x), y: Math.floor(-this.map.minPx.y) }; // offset from the map
+        var offset = { x: Math.round(-this.map.minPx.x), y: Math.round(-this.map.minPx.y) }; // offset from the map
 
         var image = {
             data: this.snapshot.image,
@@ -1524,11 +1529,11 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
                     }
                 };
                 var oldOffset = this.oldImage.globalOffset,
-                    minPx = this.map.minPx,
-                    maxPx = this.map.maxPx,
+                    minPx = Math.round(this.map.minPx.x),
+                    maxPx = Math.round(this.map.maxPx.x),
                     offsets = [{ x: oldOffset.x, y: oldOffset.y }]; // add old image offset (current world)
 
-                var pxLen = Math.floor(maxPx.x - minPx.x);
+                var pxLen = maxPx - minPx;
                 offsets.push({ x: oldOffset.x - pxLen, y: oldOffset.y }); // add additional old image offsets (neighboring worlds)
                 offsets.push({ x: oldOffset.x + pxLen, y: oldOffset.y }); 
 
