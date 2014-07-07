@@ -1298,6 +1298,14 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
             }
             ctx.strokeStyle = "red";
             ctx.stroke();
+            
+            ctx.fillStyle = "#00FF00";;
+            for (var i = 0; i < cs.length; i++) {
+                var ps = cs[i].points;
+                for (var j = 0; j < ps.length; j++) {
+                    ctx.fillRect(ps[j].x, ps[j].y, 1, 1);
+                }
+            }
         }
         if (evt.ctrlKey) { // history manipulations
             var img = null;
