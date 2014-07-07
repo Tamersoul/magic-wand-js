@@ -420,7 +420,7 @@ OpenLayers.Tile.Mask = OpenLayers.Class(OpenLayers.Tile, {
             contours = MagicWand.traceContours(image),
             result = [];
 
-        contours = MagicWand.simplifyContours(contours, this.layer.simplifyTolerant, this.layer.simplifyCount);
+        if (this.layer.simplifyTolerant > 0) contours = MagicWand.simplifyContours(contours, this.layer.simplifyTolerant, this.layer.simplifyCount);
         len = contours.length;
         for (i = 0; i < len; i++) {
             if (filter && filter(contours[i]) === false) continue;
