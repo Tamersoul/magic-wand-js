@@ -1,4 +1,4 @@
-
+//
 // Magic Wand Control for Openlayers 2.13
 //
 // The MIT License (MIT)
@@ -414,7 +414,7 @@ OpenLayers.Tile.Mask = OpenLayers.Class(OpenLayers.Tile, {
     getContours: function (filter) {
         if (!this.image) return null;
 
-        var i, j, points, len, plen,
+        var i, j, points, len, plen, c,
             image = this.image,
             dx = image.globalOffset.x + Math.round(this.layer.map.minPx.x),
             dy = image.globalOffset.y + Math.round(this.layer.map.minPx.y),
@@ -424,9 +424,11 @@ OpenLayers.Tile.Mask = OpenLayers.Class(OpenLayers.Tile, {
         if (this.layer.simplifyTolerant > 0) contours = MagicWand.simplifyContours(contours, this.layer.simplifyTolerant, this.layer.simplifyCount);
         len = contours.length;
         for (i = 0; i < len; i++) {
-            if (filter && filter(contours[i]) === false) continue;
-            points = contours[i].points;
+            c = contours[i];
+            points = c.points;
             plen = points.length;
+            c.initialCount = c.initialCount || plen;
+            if (filter && filter(c) === false) continue;
             for (j = 0; j < plen; j++) {
                 points[j].x += dx;
                 points[j].y += dy;
@@ -609,6 +611,28 @@ OpenLayers.Layer.Snapshot = OpenLayers.Class({
     },
     
     /**
+     * Method: toImageUrl
+     * Create data URL from the snapshot image
+     */
+    toImageUrl: function (format) {
+        if (!this.image || !this.size) return null;
+
+        format = format || "image/png";
+        var canvas = document.createElement("canvas");
+        var context = canvas.getContext("2d");
+        context.canvas.width = this.size.w;
+        context.canvas.height = this.size.h;
+
+        var imgData = context.createImageData(this.size.w, this.size.h);
+        for (var i = 0; i < this.image.length; i++) {
+            imgData.data[i] = this.image[i];
+        }
+        context.putImageData(imgData, 0, 0);
+        
+        return canvas.toDataURL(format);
+    },
+
+    /**
      * Method: isReady
      * Indicates whether or not the snapshot is fully loaded. This should be overriden by any subclass
      */
@@ -654,7 +678,6 @@ OpenLayers.Layer.Snapshot.Grid = OpenLayers.Class(OpenLayers.Layer.Snapshot, {
         this.scan();
     },
 
-    // private
     scan: function () {
         this.cacheCount = 0;
         this.cache = {};
@@ -797,7 +820,6 @@ OpenLayers.Layer.Snapshot.Google = OpenLayers.Class(OpenLayers.Layer.Snapshot, {
         this.scan();
     },
 
-    // private
     scan: function () {
         if (this.layer.map) {
 
@@ -851,6 +873,28 @@ OpenLayers.Layer.Snapshot.Google = OpenLayers.Class(OpenLayers.Layer.Snapshot, {
     },
     
     // private
+    getGoogleImages: function (layer) {
+        if (!layer.getMapContainer) return [];
+        // find all images in layer div
+        var all = Array.prototype.slice.call(layer.getMapContainer().getElementsByTagName('img'));
+        var len = all.length,
+            images = [],
+            tileSize = layer.tileSize,
+            //zoom = "z=" + layer.map.getZoom(),
+            i, tile;
+
+        // filter google tiles with current zoom among all
+        for (i = 0; i < len; i++) {
+            tile = all[i];
+            if (tile.src.search("google") != -1 /*&& tile.src.search(zoom) != -1*/ && tile.width == tileSize.w && tile.height == tileSize.h) {
+                images.push(tile);
+            }
+        }
+
+        return images;
+    },
+
+    // private
     onTilesLoad: function () {
         this.ready = false;
         this.tilesAll = 0;
@@ -861,19 +905,16 @@ OpenLayers.Layer.Snapshot.Google = OpenLayers.Class(OpenLayers.Layer.Snapshot, {
 
         this.events.triggerEvent("scanstart", { snapshot: this });
 
-        // find all images in layer div
-        var all = Array.prototype.slice.call(this.layer.getMapContainer().getElementsByTagName('img'));
-        var len = all.length,
-            images = [],
-            tileSize = this.layer.tileSize,
-            zoom = "z=" + this.layer.map.getZoom(),
-            i, tile;
-
-        // filter google tiles with current zoom among all
-        for (i = 0; i < len; i++) {
-            tile = all[i];
-            if (tile.src.search("google") != -1 && tile.src.search(zoom) != -1 && tile.width == tileSize.w && tile.height == tileSize.h) {
-                images.push(tile);
+        var images = this.getGoogleImages(this.layer),
+            j, k, len, len2, wrongImages, index;
+        var overviews = this.layer.map.getControlsByClass("OpenLayers.Control.OverviewMap");
+        for (j = 0, len = overviews.length; j < len; j++) {
+            wrongImages = this.getGoogleImages(overviews[j].ovmap.baseLayer);
+            for (k = 0, len2 = wrongImages.length; k < len2; k++) {
+                index = images.indexOf(wrongImages[k]);
+                if (index != -1) {
+                    images.splice(index, 1);
+                }
             }
         }
         
@@ -881,8 +922,8 @@ OpenLayers.Layer.Snapshot.Google = OpenLayers.Class(OpenLayers.Layer.Snapshot, {
 
         var view = this.layer.map.viewPortDiv.getBoundingClientRect();
         // create clones for google tile with anonymous crossorigin
-        for (i = 0; i < this.tilesAll; i++) {
-            tile = images[i];
+        for (var i = 0; i < this.tilesAll; i++) {
+            var tile = images[i];
             var bounds = tile.getBoundingClientRect();
             
             var img = new Image();
@@ -1395,9 +1436,14 @@ OpenLayers.Control.MagicWand = OpenLayers.Class(OpenLayers.Control, {
     },
 
     createSnapshot: function () {
-        this.removeSnapshot();
-
         var layer = this.getLayer();
+
+        if (this.snapshot && this.snapshot.layer == layer) {
+            this.snapshot.scan();
+            return;
+        }
+
+        this.removeSnapshot();
 
         var options = {            
             eventListeners: {
