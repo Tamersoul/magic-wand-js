@@ -1,0 +1,36 @@
+{
+    "name": "magic-wand-tool",
+    "version": "1.1.2",
+    "description": "Magic wand tool (fuzzy selection) by color",
+    "main": "dist/magic-wand.min.js",
+    "scripts": {
+        "minifyJS": "uglifyjs src/MagicWand.js --compress --mangle --warn --output dist/magic-wand.min.js",
+        "production": "npm run minifyJS --silent"
+    },
+    "homepage": "https://github.com/Tamersoul/magic-wand-js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Tamersoul/magic-wand-js.git"
+    },
+    "keywords": [
+        "image",
+        "magic-wand",
+        "selection",
+        "floodfill",
+        "contour"
+    ],
+    "author": "Ryasnoy Paul <ryasnoypaul@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Tamersoul/magic-wand-js/issues"
+    },
+    "devDependencies": {
+        "uglify-js": "^3.7.2"
+    },
+    "files": [
+        "LICENSE",
+        "README.md",
+        "dist",
+        "src"
+    ]
+}

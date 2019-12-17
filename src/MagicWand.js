@@ -1,4 +1,4 @@
-
+﻿
 // Magic Wand (Fuzzy Selection Tool) for Javascript
 //
 // The MIT License (MIT)
@@ -33,9 +33,16 @@ MagicWand = (function () {
       * @param {int} y of start pixel
       * @param {int} color threshold
       * @param {Uint8Array} mask of visited points (optional) 
+      * @param {boolean} [includeBorders=false] indicate whether to include borders pixels
       * @return {Object} mask: {Uint8Array} data, {int} width, {int} height, {Object} bounds
       */
-    lib.floodFill = function(image, px, py, colorThreshold, mask) {
+    lib.floodFill = function(image, px, py, colorThreshold, mask, includeBorders) {
+        return includeBorders
+            ? floodFillWithBorders(image, px, py, colorThreshold, mask)
+            : floodFillWithoutBorders(image, px, py, colorThreshold, mask);
+    };
+
+    function floodFillWithoutBorders(image, px, py, colorThreshold, mask) {
 
         var c, x, newY, el, xr, xl, dy, dyl, dyr, checkY,
             data = image.data,
@@ -112,6 +119,120 @@ MagicWand = (function () {
                     visited[dyr] = 1;
 
                     xr++;
+                }
+
+                // check minmax for X
+                if (xl < minX) minX = xl + 1;
+                if (xr > maxX) maxX = xr - 1;
+
+                newY = el.y - el.dir;
+                if (newY >= 0 && newY < h) { // add two scanning lines in the opposite direction (y - dir) if necessary
+                    if (xl < el.left) stack.push({ y: newY, left: xl, right: el.left, dir: -el.dir }); // from "new left" to "current left"
+                    if (el.right < xr) stack.push({ y: newY, left: el.right, right: xr, dir: -el.dir }); // from "current right" to "new right"
+                }
+                newY = el.y + el.dir;
+                if (newY >= 0 && newY < h) { // add the scanning line in the direction (y + dir) if necessary
+                    if (xl < xr) stack.push({ y: newY, left: xl, right: xr, dir: el.dir }); // from "new left" to "new right"
+                }
+            }
+            // check minmax for Y if necessary
+            if (checkY) {
+                if (el.y < minY) minY = el.y;
+                if (el.y > maxY) maxY = el.y;
+            }
+        } while (stack.length > 0);
+
+        return {
+            data: result,
+            width: image.width,
+            height: image.height,
+            bounds: {
+                minX: minX,
+                minY: minY,
+                maxX: maxX,
+                maxY: maxY
+            }
+        };
+    };
+
+    function floodFillWithBorders(image, px, py, colorThreshold, mask) {
+
+        var c, x, newY, el, xr, xl, dy, dyl, dyr, checkY,
+            data = image.data,
+            w = image.width,
+            h = image.height,
+            bytes = image.bytes, // number of bytes in the color
+            maxX = -1, minX = w + 1, maxY = -1, minY = h + 1,
+            i = py * w + px, // start point index in the mask data
+            result = new Uint8Array(w * h), // result mask
+            visited = new Uint8Array(mask ? mask : w * h); // mask of visited points
+
+        if (visited[i] === 1) return null;
+
+        i = i * bytes; // start point index in the image data
+        var sampleColor = [data[i], data[i + 1], data[i + 2], data[i + 3]]; // start point color (sample)
+
+        var stack = [{ y: py, left: px - 1, right: px + 1, dir: 1 }]; // first scanning line
+        do {
+            el = stack.shift(); // get line for scanning
+
+            checkY = false;
+            for (x = el.left + 1; x < el.right; x++) {
+                dy = el.y * w;
+                i = (dy + x) * bytes; // point index in the image data
+
+                if (visited[dy + x] === 1) continue; // check whether the point has been visited
+
+                checkY = true; // if the color of the new point(x,y) is similar to the sample color need to check minmax for Y 
+
+                result[dy + x] = 1; // mark a new point in mask
+                visited[dy + x] = 1; // mark a new point as visited
+
+                // compare the color of the sample
+                c = data[i] - sampleColor[0]; // check by red
+                if (c > colorThreshold || c < -colorThreshold) continue;
+                c = data[i + 1] - sampleColor[1]; // check by green
+                if (c > colorThreshold || c < -colorThreshold) continue;
+                c = data[i + 2] - sampleColor[2]; // check by blue
+                if (c > colorThreshold || c < -colorThreshold) continue;
+
+                xl = x - 1;
+                // walk to left side starting with the left neighbor
+                while (xl > -1) {
+                    dyl = dy + xl;
+                    i = dyl * bytes; // point index in the image data
+                    if (visited[dyl] === 1) break; // check whether the point has been visited
+
+                    result[dyl] = 1;
+                    visited[dyl] = 1;
+                    xl--;
+
+                    // compare the color of the sample
+                    c = data[i] - sampleColor[0]; // check by red
+                    if (c > colorThreshold || c < -colorThreshold) break;
+                    c = data[i + 1] - sampleColor[1]; // check by green
+                    if (c > colorThreshold || c < -colorThreshold) break;
+                    c = data[i + 2] - sampleColor[2]; // check by blue
+                    if (c > colorThreshold || c < -colorThreshold) break;
+                }
+                xr = x + 1;
+                // walk to right side starting with the right neighbor
+                while (xr < w) {
+                    dyr = dy + xr;
+                    i = dyr * bytes; // index point in the image data
+                    if (visited[dyr] === 1) break; // check whether the point has been visited
+
+                    result[dyr] = 1;
+                    visited[dyr] = 1;
+                    xr++;
+
+                    // compare the color of the sample
+                    c = data[i] - sampleColor[0]; // check by red
+                    if (c > colorThreshold || c < -colorThreshold) break;
+                    c = data[i + 1] - sampleColor[1]; // check by green
+                    if (c > colorThreshold || c < -colorThreshold) break;
+                    c = data[i + 2] - sampleColor[2]; // check by blue
+                    if (c > colorThreshold || c < -colorThreshold) break;
                 }
 
                 // check minmax for X

@@ -1,12 +1,29 @@
-magic-wand-js
-=============
 
-Magic wand tool (fuzzy selection) by color for Javascript
+[![view on npm](http://img.shields.io/npm/v/magic-wand-tool.svg)](https://www.npmjs.org/package/magic-wand-tool)
+[![License: MIT](https://img.shields.io/github/license/tamersoul/magic-wand-js.svg)](https://github.com/Tamersoul/magic-wand-js/blob/master/LICENSE.txt)
 
-Live example: http://jsfiddle.net/Tamersoul/dr7Dw/
+#Magic wand tool (fuzzy selection) by color for Javascript
 
-Magic Wand Control for Openlayers 2.13 (use only for "google" and "grid" layers with CORS support)
+Creates binary mask and contours (vector data) from raster image data by color differences
 
-Live Openlayers example: http://jsfiddle.net/Tamersoul/uBL5C/
+## Installation
 
-Enjoy.
+Install it thought NPM:
+
+```shell
+npm install magic-wand-tool
+```
+
+Or add from CDN:
+
+```html
+<script src="https://unpkg.com/magic-wand-tool@latest/dist/magic-wand.min.js"></script>
+```
+
+### Example usage:
+
+[Live example on the jsFiddle](http://jsfiddle.net/Tamersoul/dr7Dw/)
+
+## License
+
+[MIT](https://opensource.org/licenses/MIT) (c) 2014, Ryasnoy Paul
