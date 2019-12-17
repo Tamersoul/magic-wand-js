@@ -2,7 +2,7 @@
 [![view on npm](http://img.shields.io/npm/v/magic-wand-tool.svg)](https://www.npmjs.org/package/magic-wand-tool)
 [![License: MIT](https://img.shields.io/github/license/tamersoul/magic-wand-js.svg)](https://github.com/Tamersoul/magic-wand-js/blob/master/LICENSE.txt)
 
-#Magic wand tool (fuzzy selection) by color for Javascript
+# Magic wand tool (fuzzy selection) by color for Javascript
 
 Creates binary mask and contours (vector data) from raster image data by color differences
 
