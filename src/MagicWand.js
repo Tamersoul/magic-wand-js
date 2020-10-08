@@ -1,5 +1,5 @@
 ﻿    
-MagicWand = (function () {
+var MagicWand = (function () {
     var lib = {};
 
     /** Create a binary mask on the image by color threshold
