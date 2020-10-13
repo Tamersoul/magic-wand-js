@@ -857,4 +857,5 @@ var MagicWand = (function () {
     return lib;
 })();
 
-module.exports = MagicWand;
+if (module) module.exports = MagicWand;
+if (window) window.MagicWand = MagicWand;
