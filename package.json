@@ -25,7 +25,7 @@
         "url": "https://github.com/Tamersoul/magic-wand-js/issues"
     },
     "devDependencies": {
-        "rollup": "^1.32.1",
+        "rollup": "^3.29.5",
         "rollup-plugin-terser": "^5.3.1"
     },
     "files": [
